@@ -1,0 +1,16 @@
+# Binder-compatible environment for ionis-jupyter
+# Launch: https://mybinder.org/v2/gh/IONIS-AI/ionis-jupyter/main
+name: ionis-jupyter
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pandas>=2.0
+  - numpy>=1.24
+  - matplotlib>=3.7
+  - seaborn>=0.12
+  - jupyterlab>=4.0
+  - pip
+  - pip:
+    - ionis-mcp>=1.1.0
