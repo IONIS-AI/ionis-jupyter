@@ -2,12 +2,14 @@
 
 Loads datasets from the ionis-mcp data directory. Compatible with data
 downloaded via `ionis-download` CLI.
+
+Falls back to bundled sample data for Binder/demo environments.
 """
 
 import os
 import sqlite3
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 import pandas as pd
 
@@ -24,6 +26,14 @@ DATASET_PATHS = {
     "balloons": "tools/balloon-callsigns/balloon_callsigns_v2.sqlite",
 }
 
+# Sample data paths (bundled with package for Binder demos)
+SAMPLE_PATHS = {
+    "wspr": "wspr_signatures_sample.sqlite",
+    "contest": "contest_signatures_sample.sqlite",
+    "solar": "solar_indices_sample.sqlite",
+    "grids": "grid_lookup_sample.sqlite",
+}
+
 # Table names within each SQLite file
 DATASET_TABLES = {
     "wspr": "wspr_signatures",
@@ -36,6 +46,9 @@ DATASET_TABLES = {
     "grids": "grid_lookup",
     "balloons": "balloon_callsigns",
 }
+
+# Flag to track if we're using sample data
+_using_sample_data = False
 
 # Band ID to name mapping
 BAND_NAMES = {
@@ -91,21 +104,40 @@ def list_datasets(data_dir: Optional[Path] = None) -> dict:
         data_dir: Override data directory (default: auto-detect)
 
     Returns:
-        Dict of dataset name -> {"path": Path, "exists": bool, "rows": int|None}
+        Dict of dataset name -> {"path": Path, "exists": bool, "rows": int|None, "sample": bool}
     """
     if data_dir is None:
         try:
             data_dir = get_data_dir()
         except FileNotFoundError:
-            data_dir = Path(".")
+            data_dir = None
 
+    sample_dir = _get_sample_dir()
     result = {}
-    for name, rel_path in DATASET_PATHS.items():
-        path = data_dir / rel_path
-        exists = path.exists()
-        rows = None
 
-        if exists:
+    for name, rel_path in DATASET_PATHS.items():
+        path = None
+        exists = False
+        rows = None
+        is_sample = False
+
+        # Check full dataset
+        if data_dir is not None:
+            full_path = data_dir / rel_path
+            if full_path.exists():
+                path = full_path
+                exists = True
+
+        # Check sample data if full not found
+        if not exists and name in SAMPLE_PATHS:
+            sample_path = sample_dir / SAMPLE_PATHS[name]
+            if sample_path.exists():
+                path = sample_path
+                exists = True
+                is_sample = True
+
+        # Get row count
+        if exists and path:
             try:
                 conn = sqlite3.connect(str(path))
                 table = DATASET_TABLES[name]
@@ -115,9 +147,50 @@ def list_datasets(data_dir: Optional[Path] = None) -> dict:
             except Exception:
                 pass
 
-        result[name] = {"path": path, "exists": exists, "rows": rows}
+        result[name] = {"path": path, "exists": exists, "rows": rows, "sample": is_sample}
 
     return result
+
+
+def _get_sample_dir() -> Path:
+    """Get the bundled sample data directory."""
+    # Sample data is in data/sample/ relative to package root
+    pkg_root = Path(__file__).parent.parent.parent
+    return pkg_root / "data" / "sample"
+
+
+def _find_dataset(name: str, data_dir: Optional[Path] = None) -> Tuple[Path, bool]:
+    """Find dataset path, falling back to sample data.
+
+    Returns:
+        Tuple of (path, is_sample)
+    """
+    # Try full dataset first
+    if data_dir is not None:
+        full_path = data_dir / DATASET_PATHS[name]
+        if full_path.exists():
+            return full_path, False
+    else:
+        try:
+            full_dir = get_data_dir()
+            full_path = full_dir / DATASET_PATHS[name]
+            if full_path.exists():
+                return full_path, False
+        except FileNotFoundError:
+            pass
+
+    # Fall back to sample data
+    if name in SAMPLE_PATHS:
+        sample_path = _get_sample_dir() / SAMPLE_PATHS[name]
+        if sample_path.exists():
+            return sample_path, True
+
+    # Nothing found
+    raise FileNotFoundError(
+        f"Dataset '{name}' not found. "
+        f"Run: ionis-download --datasets {name}\n"
+        f"Or use sample data (available for: {', '.join(SAMPLE_PATHS.keys())})"
+    )
 
 
 def load_dataset(
@@ -137,6 +210,10 @@ def load_dataset(
     Returns:
         pandas DataFrame with dataset contents
 
+    Note:
+        Falls back to bundled sample data if full dataset not found.
+        Sample data is limited but sufficient for demos.
+
     Raises:
         ValueError: If dataset name is invalid
         FileNotFoundError: If dataset file not found
@@ -145,20 +222,17 @@ def load_dataset(
         >>> wspr = load_dataset("wspr", limit=10000)
         >>> print(wspr.head())
     """
+    global _using_sample_data
+
     if name not in DATASET_PATHS:
         valid = ", ".join(sorted(DATASET_PATHS.keys()))
         raise ValueError(f"Unknown dataset '{name}'. Valid: {valid}")
 
-    if data_dir is None:
-        data_dir = get_data_dir()
+    path, is_sample = _find_dataset(name, data_dir)
 
-    path = data_dir / DATASET_PATHS[name]
-
-    if not path.exists():
-        raise FileNotFoundError(
-            f"Dataset '{name}' not found at {path}. "
-            f"Run: ionis-download --datasets {name}"
-        )
+    if is_sample:
+        _using_sample_data = True
+        print(f"[Using sample data for '{name}' - {path.name}]")
 
     conn = sqlite3.connect(str(path))
 
@@ -172,6 +246,11 @@ def load_dataset(
     conn.close()
 
     return df
+
+
+def is_using_sample_data() -> bool:
+    """Check if any loaded dataset was from sample data."""
+    return _using_sample_data
 
 
 def band_name(band_id: int) -> str:

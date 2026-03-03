@@ -10,9 +10,9 @@ Example:
     >>> print(f"Loaded {len(wspr):,} WSPR signatures")
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
-from .loader import load_dataset, list_datasets, get_data_dir
+from .loader import load_dataset, list_datasets, get_data_dir, is_using_sample_data
 from .grids import (
     grid_to_latlon,
     latlon_to_grid,
@@ -34,6 +34,7 @@ __all__ = [
     "load_dataset",
     "list_datasets",
     "get_data_dir",
+    "is_using_sample_data",
     # Grids
     "grid_to_latlon",
     "latlon_to_grid",
