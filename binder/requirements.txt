@@ -1,5 +1,5 @@
-# Install this package (with dependencies)
--e ..
+# Install from PyPI (includes pandas, matplotlib, seaborn, numpy, ionis-mcp)
+ionis-jupyter>=0.2.0
 
 # Jupyter for running notebooks
 jupyterlab>=4.0
