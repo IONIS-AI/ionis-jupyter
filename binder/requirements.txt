@@ -1,0 +1,5 @@
+# Install this package (with dependencies)
+-e ..
+
+# Jupyter for running notebooks
+jupyterlab>=4.0
