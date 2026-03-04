@@ -154,9 +154,8 @@ def list_datasets(data_dir: Optional[Path] = None) -> dict:
 
 def _get_sample_dir() -> Path:
     """Get the bundled sample data directory."""
-    # Sample data is in data/sample/ relative to package root
-    pkg_root = Path(__file__).parent.parent.parent
-    return pkg_root / "data" / "sample"
+    # Sample data is bundled inside the installed package
+    return Path(__file__).parent / "sample_data"
 
 
 def _find_dataset(name: str, data_dir: Optional[Path] = None) -> Tuple[Path, bool]:
