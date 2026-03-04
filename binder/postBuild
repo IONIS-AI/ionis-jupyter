@@ -1,0 +1,2 @@
+#!/bin/bash
+pip install --no-cache-dir ionis-jupyter>=0.2.0 jupyterlab>=4.0
