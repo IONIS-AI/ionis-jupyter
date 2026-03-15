@@ -56,16 +56,22 @@ A z-score measures how far a value is from "normal" in units of standard deviati
 this dataset, it answers: **how unusual was the launch day's spot count compared to the
 surrounding control days?**
 
-| Z-Score | Meaning | Probability of occurring by chance |
-|---------|---------|-----------------------------------|
-| 0 | Launch day was exactly average | 50% |
-| 1 | Slightly above normal | 1 in 6 (~16%) |
-| 2 | Unusually high — statistically significant | 1 in 44 (~2.3%) |
-| 3 | Very unusual | 1 in 740 (~0.13%) |
-| 6.2 | Extreme outlier (Sentinel-6B) | Less than 1 in 1 billion |
+| Z-Score | Meaning |
+|---------|---------|
+| 0 | Launch day was exactly average |
+| 1 | Slightly above normal |
+| 2 | Unusually high |
+| 3 | Very unusual |
+| 6.2 | Extreme outlier (Sentinel-6B) |
 
-A negative z-score means fewer spots than normal. A z-score above 2 is generally
-considered statistically significant — unlikely to be random chance.
+A negative z-score means fewer spots than normal. Higher positive values mean more
+unusual. A z-score above 2 is a common threshold for "worth investigating."
+
+**Note on sample size:** Each launch has only 6 control days. The z-score is valid
+as a measure of distance from the mean, but the sample is too small to make precise
+probability claims. For context, Sentinel-6B's launch day (97,285 spots) exceeded
+the highest control day (70,547) by 38% — the signal is clear regardless of
+distributional assumptions.
 
 ## Launches Included
 
@@ -93,16 +99,17 @@ evening local time (PDT/PST), rolling to the next calendar day in UTC.
 - **Band**: WSPR 20m (band ID 107, 14.0956 MHz)
 - **Window**: 3 hours starting at launch time (rounded down to nearest hour)
 - **Control days**: 3 days before and 3 days after launch, same hour window
-- **Solar data**: GFZ Potsdam daily SFI/SSN, Kp daily average
+- **Solar data**: GFZ Potsdam daily values for SFI and SSN. Kp is a daily average (raw Kp is published at 3-hour resolution — see notebook Section 9 for 3-hour Kp on Sentinel-6B)
 - **Source**: 10.8 billion WSPR spots in ClickHouse (`wspr.bronze`), 2008-2026
-- **Launch verification**: All dates/times cross-referenced against Vandenberg SFB press releases, NASASpaceFlight.com, and Spaceflight Now
+- **Launch site**: All 12 launches verified as Vandenberg SFB SLC-4E (not Cape Canaveral)
+- **Launch verification**: All dates and UTC times cross-referenced against Vandenberg SFB press releases, NASASpaceFlight.com forum threads, and Spaceflight Now live coverage
 
 ## Limitations
 
 - Launch times rounded down to nearest hour for WSPR alignment (actual times noted in table above)
-- No spatial filtering — spots are global, not restricted to paths near launch site
-- 3-day control window may not capture weekly patterns
-- Solar conditions are daily averages — Kp has 3-hour resolution in the raw data
+- No spatial filtering — spots are global, not restricted to paths near the Vandenberg launch trajectory
+- 3-day control window (6 control days total) is a small sample — z-scores measure distance from the mean but are not sufficient for precise probability claims
+- Kp in the CSV is a daily average — for event-level analysis, use 3-hour Kp from `solar.bronze` directly
 
 ## Suggested Extensions
 
