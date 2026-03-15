@@ -48,7 +48,24 @@ in WSPR 20m data (November 2025).
 | `control_avg` | Mean spot count across 6 control days |
 | `control_std` | Standard deviation of control day spot counts |
 | `pct_change` | Percentage change: launch day vs control average |
-| `z_score` | (launch_spots - control_avg) / control_std |
+| `z_score` | How unusual the launch day was compared to normal days (see below) |
+
+### What is a Z-Score?
+
+A z-score measures how far a value is from "normal" in units of standard deviation. In
+this dataset, it answers: **how unusual was the launch day's spot count compared to the
+surrounding control days?**
+
+| Z-Score | Meaning | Probability of occurring by chance |
+|---------|---------|-----------------------------------|
+| 0 | Launch day was exactly average | 50% |
+| 1 | Slightly above normal | 1 in 6 (~16%) |
+| 2 | Unusually high — statistically significant | 1 in 44 (~2.3%) |
+| 3 | Very unusual | 1 in 740 (~0.13%) |
+| 6.2 | Extreme outlier (Sentinel-6B) | Less than 1 in 1 billion |
+
+A negative z-score means fewer spots than normal. A z-score above 2 is generally
+considered statistically significant — unlikely to be random chance.
 
 ## Launches Included
 
