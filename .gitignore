@@ -40,11 +40,14 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Data (downloaded separately)
-data/*.sqlite
-data/*.parquet
-data/*.csv
-data/*.csv.gz
+# Data (downloaded separately) — match anywhere, not just data/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.parquet
+*.csv
+*.csv.gz
 
 # Testing
 .pytest_cache/
